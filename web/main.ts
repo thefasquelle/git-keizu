@@ -235,9 +235,7 @@ class GitKeizuView {
     const currentBtnElem = document.getElementById("currentBtn")!;
     currentBtnElem.innerHTML = svgIcons.current;
     currentBtnElem.addEventListener("click", () => {
-      if (this.commitHead !== null && typeof this.commitLookup[this.commitHead] === "number") {
-        this.scrollToCommit(this.commitHead, true, true);
-      }
+      this.scrollToHeadCommit();
     });
     const searchBtnElem = document.getElementById("searchBtn")!;
     searchBtnElem.innerHTML = svgIcons.search;
@@ -1242,12 +1240,31 @@ class GitKeizuView {
   private updateCurrentBtnState() {
     const currentBtn = document.getElementById("currentBtn");
     if (currentBtn === null) return;
-    const isHeadVisible =
-      this.commitHead !== null && typeof this.commitLookup[this.commitHead] === "number";
-    if (isHeadVisible) {
+    if (this.commitHead !== null) {
       currentBtn.classList.remove("disabled");
     } else {
       currentBtn.classList.add("disabled");
+    }
+  }
+
+  private scrollToHeadCommit() {
+    if (this.commitHead === null) return;
+    const tryScroll = () => {
+      if (this.commitHead !== null && typeof this.commitLookup[this.commitHead] === "number") {
+        this.scrollToCommit(this.commitHead, true, true);
+      } else if (this.commitHead !== null && this.moreCommitsAvailable) {
+        this.maxCommits = normalizeCommitLoadCount(
+          this.maxCommits + Math.max(500, this.config.loadMoreCommits),
+          this.config.initialLoadCommits
+        );
+        this.requestLoadCommits(true, tryScroll);
+      }
+    };
+    if (typeof this.commitLookup[this.commitHead] === "number") {
+      this.scrollToCommit(this.commitHead, true, true);
+    } else {
+      this.renderShowLoading();
+      tryScroll();
     }
   }
 
@@ -1314,9 +1331,7 @@ class GitKeizuView {
       this.refresh("hard");
     } else if (key === keybindings.scrollToHead) {
       e.preventDefault();
-      if (this.commitHead !== null && typeof this.commitLookup[this.commitHead] === "number") {
-        this.scrollToCommit(this.commitHead, true, true);
-      }
+      this.scrollToHeadCommit();
     } else if (key === keybindings.scrollToStash) {
       e.preventDefault();
       this.scrollToStash(!e.shiftKey);
