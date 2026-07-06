@@ -19,6 +19,23 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const repoManager = new RepoManager(dataSource, extensionState, statusBarItem);
   const diffDocProvider = new DiffDocProvider(dataSource);
 
+  const gitExtension = vscode.extensions.getExtension("vscode.git");
+  if (gitExtension) {
+    gitExtension.activate().then(() => {
+      const gitApi = gitExtension.exports.getAPI(1);
+      if (gitApi.repositories && gitApi.repositories.length > 0) {
+        gitApi.repositories.forEach((repo: any) => {
+          repoManager.registerRepoFromUri(repo.rootUri);
+        });
+      }
+      context.subscriptions.push(
+        gitApi.onDidOpenRepository((repo: any) => {
+          repoManager.registerRepoFromUri(repo.rootUri);
+        })
+      );
+    });
+  }
+
   context.subscriptions.push(
     outputChannel,
     vscode.commands.registerCommand("git-keizu.view", (arg?: unknown) => {
