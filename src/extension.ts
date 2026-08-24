@@ -24,12 +24,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     gitExtension.activate().then(() => {
       const gitApi = gitExtension.exports.getAPI(1);
       if (gitApi.repositories && gitApi.repositories.length > 0) {
-        gitApi.repositories.forEach((repo: any) => {
+        gitApi.repositories.forEach((repo: { rootUri: vscode.Uri }) => {
           repoManager.registerRepoFromUri(repo.rootUri);
         });
       }
       context.subscriptions.push(
-        gitApi.onDidOpenRepository((repo: any) => {
+        gitApi.onDidOpenRepository((repo: { rootUri: vscode.Uri }) => {
           repoManager.registerRepoFromUri(repo.rootUri);
         })
       );
